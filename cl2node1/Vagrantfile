@@ -1,0 +1,147 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "geerlingguy/centos7"
+
+  # Der Box einen Namen geben
+  # ...und Memory und CPU für Kubernetes hochsetzen
+  config.vm.provider "virtualbox" do |v|
+      v.name = "cl2node1"
+      v.memory = 2048
+      v.cpus = 2
+  end
+
+  # Hostname definieren
+  config.vm.hostname = "cl2node1"
+
+  # Die korrekte Zeitone einstellen:
+  if Vagrant.has_plugin?("vagrant-timezone")
+     config.timezone.value = "Europe/Berlin"
+  end
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  config.vm.network :private_network, ip: "192.168.2.11", auto_config: false
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+config.vm.provision "shell", inline: <<-SHELL
+
+echo "Box auf den neuesten Stand bringen..."
+sudo yum update -y
+
+echo "Schritt 1: Docker installieren und einrichten"
+echo "============================================="
+echo "...Docker Repo als yum Repo hinzufügen"
+sudo tee /etc/yum.repos.d/docker.repo <<-'EOF'
+[dockerrepo]
+name=Docker Repository
+baseurl=https://yum.dockerproject.org/repo/main/centos/7/
+enabled=1
+gpgcheck=1
+gpgkey=https://yum.dockerproject.org/gpg
+EOF
+echo "...Docker installieren"
+sudo yum install docker-engine -y
+echo "Docker group anlegen und vagrant-user zufügen..."
+sudo groupadd docker
+sudo usermod -aG docker vagrant
+sudo chkconfig docker on
+sudo systemctl start docker
+echo "Schritt 1 erledigt"
+echo "------------------"
+
+echo "Schritt 2: Kubernetes Repo als yum Repo hinzufügen"
+echo "=================================================="
+sudo tee /etc/yum.repos.d/kubernetes.repo <<-'EOF'
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+echo "Schritt 2 erledigt"
+echo "------------------"
+
+echo "Schritt 3: iptables routing errors unter CentOS verhindern"
+echo "=========================================================="
+sudo tee /etc/sysctl.d/k8s.conf <<-EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sudo sysctl --system
+echo "Schritt 3 erledigt"
+echo "------------------"
+
+echo "Schritt 4: SeLinux abschalten, temporär and permanent"
+echo "====================================================="
+sudo tee -a /etc/sysconfig/selinux <<-EOF
+SELINUX=disabled
+SELINUXTYPE=targeted
+EOF
+# auch temporär abschalten:
+sudo setenforce 0
+echo "Schritt 4 erledigt"
+echo "------------------"
+
+echo "Schritt 5: CentoOS Swap abschalten, temporär und permanent"
+sudo swapoff -a
+echo "swap permanent ausschalten:"
+echo "swap-Zeile rauswerfen in temp-Datei und temp dann zurückkopieren..."
+sudo grep -v "swap" /etc/fstab > temp
+sudo mv temp /etc/fstab
+echo "swap permanent ausgeschaltet!"
+echo "Schritt 5 erledigt"
+echo "------------------"
+
+echo "Schritt 6: docker cgroup driver auf systemd ändern"
+echo "=================================================="
+sudo tee /etc/docker/daemon.json <<-EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF
+sudo systemctl restart docker
+echo "Schritt 6 erledigt"
+echo "------------------"
+
+echo "Schritt 7: /etc/hosts anpassen (das muss man pro Node machen!)"
+echo "--------------------------------------------------------------"
+sudo tee -a /etc/hosts <<-EOF
+192.168.2.10 cl2master
+192.168.2.12 cl2node2
+EOF
+echo "Schritt 7 erledigt"
+echo "------------------"
+
+echo "Schritt 8: network interface manuell konfigurieren"
+echo "=================================================="
+sudo nmcli con mod "Wired connection 1" ipv4.address "192.168.2.11/24"
+sudo nmcli con mod "Wired connection 1" ipv4.method "manual"
+sudo nmcli con down "Wired connection 1"
+sudo nmcli con up "Wired connection 1"
+echo "Schritt 8 erledigt"
+echo "------------------"
+
+echo "Schritt 9: kubeadm installieren und starten"
+echo "==========================================="
+sudo yum install -y kubeadm
+echo "kubelet Dienst starten"
+sudo systemctl enable kubelet && systemctl start kubelet
+echo "Schritt 9 erledigt"
+echo "------------------"
+
+
+echo "Schritt 10: schon mal die wichtigsten Images pullen"
+echo "==================================================="
+kubeadm config images pull
+echo "Schritt 10 erledigt"
+echo "------------------"
+
+SHELL
+end
