@@ -7,6 +7,8 @@ Vagrant.configure("2") do |config|
 
   # Der Box einen Namen geben
   # ...und Memory und CPU für Kubernetes hochsetzen
+  # Assign a name to this box
+  # ...define momory and number of CPUs
   config.vm.provider "virtualbox" do |v|
       v.name = "cl2master"
       v.memory = 2048
@@ -14,9 +16,11 @@ Vagrant.configure("2") do |config|
   end
 
   # Hostname definieren
+  # Set Hostname
   config.vm.hostname = "cl2master"
 
   # Die korrekte Zeitone einstellen:
+  # Set local timezone
   if Vagrant.has_plugin?("vagrant-timezone")
      config.timezone.value = "Europe/Berlin"
   end
@@ -31,9 +35,11 @@ Vagrant.configure("2") do |config|
 config.vm.provision "shell", inline: <<-SHELL
 
 echo "Box auf den neuesten Stand bringen..."
+echo "bringing box up-to-date..."
 sudo yum update -y
 
 echo "Schritt 1: Docker installieren und einrichten"
+echo "Step 1: install and set up Docker"
 echo "============================================="
 echo "...Docker Repo als yum Repo hinzufügen"
 sudo tee /etc/yum.repos.d/docker.repo <<-'EOF'
@@ -47,14 +53,17 @@ EOF
 echo "...Docker installieren"
 sudo yum install docker-engine -y
 echo "Docker group anlegen und vagrant-user zufügen..."
+echo "create Docker group and add vagrant-user..."
 sudo groupadd docker
 sudo usermod -aG docker vagrant
 sudo chkconfig docker on
 sudo systemctl start docker
 echo "Schritt 1 erledigt"
+echo "Step 1 done"
 echo "------------------"
 
 echo "Schritt 2: Kubernetes Repo als yum Repo hinzufügen"
+echo "Step 2: Add Kubernetes Repo to yum Repo definitions"
 echo "=================================================="
 sudo tee /etc/yum.repos.d/kubernetes.repo <<-'EOF'
 [kubernetes]
@@ -66,9 +75,11 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
 echo "Schritt 2 erledigt"
+echo "Step 2 done"
 echo "------------------"
 
 echo "Schritt 3: iptables routing errors unter CentOS verhindern"
+echo "prevent iptables routing errors reported under CentOS"
 echo "=========================================================="
 sudo tee /etc/sysctl.d/k8s.conf <<-EOF
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -76,9 +87,11 @@ net.bridge.bridge-nf-call-iptables = 1
 EOF
 sudo sysctl --system
 echo "Schritt 3 erledigt"
+echo "Step 3 done"
 echo "------------------"
 
 echo "Schritt 4: SeLinux abschalten, temporär and permanent"
+echo "Step 4: switch SeLinux off temporarily and permanently"
 echo "====================================================="
 sudo tee -a /etc/sysconfig/selinux <<-EOF
 SELINUX=disabled
@@ -87,9 +100,11 @@ EOF
 # auch temporär abschalten:
 sudo setenforce 0
 echo "Schritt 4 erledigt"
+echo "Step 4 done"
 echo "------------------"
 
 echo "Schritt 5: CentoOS Swap abschalten, temporär und permanent"
+echo "Step 5: turn CentOS off temporarily and permanently"
 sudo swapoff -a
 echo "swap permanent ausschalten:"
 echo "swap-Zeile rauswerfen in temp-Datei und temp dann zurückkopieren..."
@@ -97,9 +112,11 @@ sudo grep -v "swap" /etc/fstab > temp
 sudo mv temp /etc/fstab
 echo "swap permanent ausgeschaltet!"
 echo "Schritt 5 erledigt"
+echo "Step 5 done"
 echo "------------------"
 
 echo "Schritt 6: docker cgroup driver auf systemd ändern"
+echo "Step 6: change docker cgroup driver to systemd"
 echo "=================================================="
 sudo tee /etc/docker/daemon.json <<-EOF
 {
@@ -108,61 +125,76 @@ sudo tee /etc/docker/daemon.json <<-EOF
 EOF
 sudo systemctl restart docker
 echo "Schritt 6 erledigt"
+echo "Step 6 done"
 echo "------------------"
 
 echo "Schritt 7: /etc/hosts anpassen (das muss man pro Node machen!)"
+echo "Step 7: make all other nodes known via /etc/hosts"
 echo "--------------------------------------------------------------"
 sudo tee -a /etc/hosts <<-EOF
 192.168.2.11 cl2node1
 192.168.2.12 cl2node2
 EOF
 echo "Schritt 7 erledigt"
+echo "Step 7 done"
 echo "------------------"
 
 echo "Schritt 8: network interface manuell konfigurieren"
+echo "Step 8: manually configure the network adapter"
 echo "=================================================="
 sudo nmcli con mod "Wired connection 1" ipv4.address "192.168.2.10/24"
 sudo nmcli con mod "Wired connection 1" ipv4.method "manual"
 sudo nmcli con down "Wired connection 1"
 sudo nmcli con up "Wired connection 1"
 echo "Schritt 8 erledigt"
+echo "Step 8 done"
 echo "------------------"
 
 echo "Schritt 9: kubeadm installieren und starten"
+echo "Step 9: install and start kubeadm"
 echo "==========================================="
 sudo yum install -y kubeadm
 echo "kubelet Dienst starten"
 sudo systemctl enable kubelet && systemctl start kubelet
 echo "Schritt 9 erledigt"
+echo "Step 9 done"
 echo "------------------"
 
-
 echo "Schritt 10: schon mal die wichtigsten Images pullen"
+echo "Step 10: pulling down some images for later"
 echo "==================================================="
 kubeadm config images pull
 echo "Schritt 10 erledigt"
+echo " Step 10 done"
 echo "------------------"
 
 echo "Schritt 11: Master Node initialisieren"
+echo "Step 11: Initialize master node"
 echo "======================================"
 sudo kubeadm init --apiserver-advertise-address=192.168.2.10 --pod-network-cidr=10.244.0.0/16
 echo "Schritt 11 erledigt: Achtung - den 'kubeadm join' muss man sich sichern!"
+echo "Step 11 done: important - you must save the kubeadm join command for joining nodes later!"
 echo "------------------"
 
 echo "Schritt 12: Konfiguration ins Home-Verzeichnis von vagrant kopieren"
+echo " Step 12: copy configuration in vagrant's home directory"
 echo "==================================================================="
 # Diese Schritte werden unter dem User vagrant durchgeführt
+# these steps will be performed as user vagrant
 sudo -i -u vagrant bash << EOF
 mkdir -p /home/vagrant/.kube
 sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
 sudo chown vagrant:vagrant /home/vagrant/.kube/config
 echo "Schritt 12 erledigt"
+echo "Step 12 done"
 echo "-------------------"
 
 echo "Schritt 13: Overlay Netzwerk installieren (wir verwenden Flannel)"
+echo "Step 13: installing overlay network (we are using Flannel here)"
 echo "================================================================="
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
 echo "Schritt 13 erledigt"
+echo "Step 13 done"
 echo "-------------------"
 EOF
 SHELL
