@@ -1,0 +1,81 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "geerlingguy/centos7"
+
+  # Der Box einen Namen geben
+  # ...und Memory und CPU für Kubernetes hochsetzen
+  # Assign a name to this box
+  # ...define momory and number of CPUs
+  config.vm.provider "virtualbox" do |v|
+      v.name = "cl2nfs"
+      v.memory = 2048
+      v.cpus = 2
+  end
+
+  # Hostname definieren
+  # Set Hostname
+  config.vm.hostname = "cl2nfs"
+
+  # Die korrekte Zeitzone einstellen:
+  # Set local timezone
+  if Vagrant.has_plugin?("vagrant-timezone")
+     config.timezone.value = "Europe/Berlin"
+  end
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  config.vm.network :private_network, ip: "192.168.2.9", auto_config: false
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+config.vm.provision "shell", inline: <<-SHELL
+
+echo "Box auf den neuesten Stand bringen..."
+echo "bringing box up-to-date..."
+sudo yum update -y
+
+
+echo "Schritt 7: /etc/hosts anpassen (das muss man pro Node machen!)"
+echo "Step 7: make all other nodes known via /etc/hosts"
+echo "--------------------------------------------------------------"
+sudo tee -a /etc/hosts <<-EOF
+192.168.2.10 cl2master
+192.168.2.11 cl2node1
+192.168.2.12 cl2node2
+EOF
+echo "Schritt 7 erledigt"
+echo "Step 7 done"
+echo "------------------"
+
+echo "Schritt 8: network interface manuell konfigurieren"
+echo "Step 8: manually configure the network adapter"
+echo "=================================================="
+sudo nmcli con mod "Wired connection 1" ipv4.address "192.168.2.9/24"
+sudo nmcli con mod "Wired connection 1" ipv4.method "manual"
+sudo nmcli con down "Wired connection 1"
+sudo nmcli con up "Wired connection 1"
+echo "Schritt 8 erledigt"
+echo "Step 8 done"
+echo "------------------"
+
+yum install nfs-utils nfs-utils-lib
+systemctl enable rpcbind
+systemctl enable nfs-server
+systemctl enable nfs-lock
+systemctl enable nfs-idmap
+
+systemctl start rpcbind
+systemctl start nfs-server
+systemctl start nfs-lock
+systemctl start nfs-idmap
+
+# create k8s_share and parents
+mkdir -p /vagrant/storage/k8s_share
+chmod 777 /vagrant/storage/k8s_share
+
+SHELL
+end
