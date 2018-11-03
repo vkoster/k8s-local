@@ -42,14 +42,19 @@ echo "Schritt 1: Docker installieren und einrichten"
 echo "Step 1: install and set up Docker"
 echo "============================================="
 echo "...Docker Repo als yum Repo hinzufügen"
-sudo tee /etc/yum.repos.d/docker.repo <<-'EOF'
-[dockerrepo]
-name=Docker Repository
-baseurl=https://yum.dockerproject.org/repo/main/centos/7/
-enabled=1
-gpgcheck=1
-gpgkey=https://yum.dockerproject.org/gpg
-EOF
+# sudo tee /etc/yum.repos.d/docker.repo <<-'EOF'
+# [dockerrepo]
+# name=Docker Repository
+# baseurl=https://yum.dockerproject.org/repo/main/centos/7/
+# enabled=1
+# gpgcheck=1
+# gpgkey=https://yum.dockerproject.org/gpg
+# EOF
+echo "this is the new way to do it..."
+echo "...install some yum-tools first: "
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+echo "next add the repo: "
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 echo "...Docker installieren"
 sudo yum install docker-engine -y
 echo "Docker group anlegen und vagrant-user zufügen..."
@@ -73,6 +78,7 @@ enabled=1
 gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*
 EOF
 echo "Schritt 2 erledigt"
 echo "Step 2 done"
@@ -120,7 +126,7 @@ echo "Step 6: change docker cgroup driver to systemd"
 echo "=================================================="
 sudo tee /etc/docker/daemon.json <<-EOF
 {
-  "exec-opts": ["native.cgroupdriver=systemd"]
+  "exec-opts": ["native.cgroupdriver=cgroupfs"]
 }
 EOF
 sudo systemctl restart docker
@@ -153,7 +159,7 @@ echo "------------------"
 echo "Schritt 9: kubeadm installieren und starten"
 echo "Step 9: install and start kubeadm"
 echo "==========================================="
-sudo yum install -y kubeadm
+sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 echo "kubelet Dienst starten"
 sudo systemctl enable kubelet && systemctl start kubelet
 echo "Schritt 9 erledigt"

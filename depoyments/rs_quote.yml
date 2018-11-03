@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: quote-rs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quote
+  # ab hier, ist es das "pod.yml"
+  template:
+    metadata:
+      labels:
+        app: quote
+    spec:
+      containers:
+      - name: quote
+        image: vkoster/quote:latest
+        ports:
+        - containerPort: 3000
+

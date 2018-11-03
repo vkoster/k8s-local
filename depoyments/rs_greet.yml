@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: greet-rs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: greet
+  # ab hier, ist es das "pod.yml"
+  template:
+    metadata:
+      labels:
+        app: greet
+    spec:
+      containers:
+      - name: greet
+        image: vkoster/greet:latest
+        ports:
+        - containerPort: 3000
+
