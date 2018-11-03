@@ -56,7 +56,7 @@ sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 echo "next add the repo: "
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 echo "...Docker installieren"
-sudo yum install docker-engine -y
+sudo yum install docker-ce -y
 echo "Docker group anlegen und vagrant-user zufügen..."
 echo "create Docker group and add vagrant-user..."
 sudo groupadd docker
