@@ -27,7 +27,7 @@ Vagrant.configure("2") do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  config.vm.network :private_network, ip: "192.168.2.12", auto_config: false
+  config.vm.network :private_network, ip: "192.168.2.12", auto_config: true
 
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
@@ -88,8 +88,8 @@ echo "Schritt 3: iptables routing errors unter CentOS verhindern"
 echo "prevent iptables routing errors reported under CentOS"
 echo "=========================================================="
 sudo tee /etc/sysctl.d/k8s.conf <<-EOF
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables=1
+net.bridge.bridge-nf-call-iptables=1
 EOF
 sudo sysctl --system
 echo "Schritt 3 erledigt"
@@ -148,10 +148,10 @@ echo "------------------"
 echo "Schritt 8: network interface manuell konfigurieren"
 echo "Step 8: manually configure the network adapter"
 echo "=================================================="
-sudo nmcli con mod "Wired connection 1" ipv4.address "192.168.2.12/24"
-sudo nmcli con mod "Wired connection 1" ipv4.method "manual"
-sudo nmcli con down "Wired connection 1"
-sudo nmcli con up "Wired connection 1"
+sudo nmcli con mod "System eth1" ipv4.address "192.168.2.12/24"
+sudo nmcli con mod "System eth1" ipv4.method "manual"
+sudo nmcli con down "System eth1"
+sudo nmcli con up "System eth1"
 echo "Schritt 8 erledigt"
 echo "Step 8 done"
 echo "------------------"

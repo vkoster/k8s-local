@@ -1,12 +1,12 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: hello-deploy
+  name: quote
 spec:
-  replicas: 10
+  replicas: 2
   selector:
     matchLabels:
-      app: hello-world
+      app: quote
   minReadySeconds: 10
   strategy:
     type: RollingUpdate
@@ -16,10 +16,15 @@ spec:
   template:
     metadata:
       labels:
-        app: hello-world
+        app: quote
     spec:
       containers:
-      - name: hello-pod
-        image: nigelpoulton/k8sbook:latest
-        ports: - containerPort: 8080
+      - name: quote-pod
+        image: vkoster/quote:v01
+        ports:
+        - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
 
