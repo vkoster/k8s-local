@@ -1,4 +1,7 @@
 # das Token darf nicht älter als 24h sein.
 # danach muss man sich vom Master ein neues geben lassen.
 # das Discovery Token läuft nicht ab
-sudo kubeadm join 192.168.2.10:6443 --token ngq6f7.7jvtlxa8hw9hcrnh --discovery-token-ca-cert-hash sha256:d5ff16794148092777ceb0cd8152e1d7a5d0c19d43aad2529acf9ecdeeefa834 --ignore-preflight-errors='all'
+# sudo kubeadm join 192.168.2.10:6443 --token ngq6f7.7jvtlxa8hw9hcrnh --discovery-token-ca-cert-hash sha256:d5ff16794148092777ceb0cd8152e1d7a5d0c19d43aad2529acf9ecdeeefa834 --ignore-preflight-errors='all'
+# sudo kubeadm join 192.168.2.10:6443 --token 7bad63.0l1u4lqro9u18uzs --discovery-token-ca-cert-hash sha256:6f4e6e63ced94667d603f9bd0078c6985ab9972074f27fc5441208c4f7247836 --ignore-preflight-errors='all'
+sudo kubeadm join 192.168.2.10:6443 --token knkrfo.zrmkqx2dqzg6y7ir --discovery-token-ca-cert-hash sha256:f8bf5f1330afe49f5a044e03d02d8e3db4c02ef3d454bbb41d6ec965ab48978e --ignore-preflight-errors='all'
+

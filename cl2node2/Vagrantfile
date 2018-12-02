@@ -174,5 +174,14 @@ echo "Schritt 10 erledigt"
 echo " Step 10 done"
 echo "------------------"
 
+echo "Schritt 11: kubelet config pimpen und durchstarten"
+echo "Step 11: now we have to pimp the kubelet config and restart it"
+echo "==================================================="
+sudo tee -a /etc/sysconfig/kubelet <<-EOF
+KUBELET_EXTRA_ARGS=--node-ip=192.168.2.12
+EOF
+echo "Step 11 done"
+echo "------------------"
+
 SHELL
 end

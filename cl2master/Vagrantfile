@@ -178,6 +178,12 @@ echo "Schritt 11: Master Node initialisieren"
 echo "Step 11: Initialize master node"
 echo "======================================"
 sudo kubeadm init --apiserver-advertise-address=192.168.2.10 --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors='all'
+echo "now we have to pimp the kubelet config and restart it..."
+sudo tee -a /etc/sysconfig/kubelet <<-EOF
+KUBELET_EXTRA_ARGS=--node-ip=192.168.2.10
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
 echo "Schritt 11 erledigt: Achtung - den 'kubeadm join' muss man sich sichern!"
 echo "Step 11 done: important - you must save the kubeadm join command for joining nodes later!"
 echo "------------------"
@@ -198,11 +204,17 @@ echo "-------------------"
 echo "Schritt 13: Overlay Netzwerk installieren (wir verwenden Flannel)"
 echo "Step 13: installing overlay network (we are using Flannel here)"
 echo "================================================================="
+echo "yq herunterladen und installieren:"
+# to do: Flannel Config File herunterladen und mit yq pimpen...
+# wget https://github.com/mikefarah/yq/releases/download/2.2.0/yq_linux_amd64
 # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
-kubeclt apply -f kube-flannel.yml
+# wget https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
+# yq r --doc 4 kube-flannel.yml spec.template.spec.containers[0].args
+kubectl apply -f /vagrant/deployments/kube-flannel.yml
 echo "Schritt 13 erledigt"
 echo "Step 13 done"
 echo "-------------------"
 EOF
+
 SHELL
 end

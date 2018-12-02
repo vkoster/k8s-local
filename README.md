@@ -39,7 +39,24 @@ Nodes will be created as VirtualBox VMs. The will be running in a Host-Only Netw
 They will be managed and provisiond by Vagrant.
 
 ## Activities
-03.11.2018
+### 02.12.2018
+Most of the problems with setting up a Kubernetes cluster with kubeadm based on Vagrant scripts
+originates from the fact that virtual machines have more than one network interface configured.
+A VirtualBox VM has a NIC for NATed access via ssh and another one for establishing the Host-Only
+network that connects the cluster nodes.
+On the Master Node you have to modify the Flannel Yaml and the kubelet config to make things work correctly.
+On the worker nodes you only have to pimp the Flannel Yaml.
+
+* Pimping the Flannel config file.
+* Configuration of Kubelet with the node ip.
+
+#### Pimping the Flannel config file
+ToDo: describe the changes
+#### Kubelet configuration
+ToDo: describe the changes
+
+
+### 03.11.2018
 Migration to Docker-CE.
 We now explicitly bind the Docker-CE Repository
 The old Repo is no longer active and provides an old Version of Docker.
