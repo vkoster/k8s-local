@@ -25,6 +25,7 @@ spec:
         - containerPort: 3000
         livenessProbe:
           httpGet:
-            path: /
+            path: /probe
             port: 3000
+          initialDelaySeconds: 10
 

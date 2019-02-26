@@ -138,6 +138,7 @@ echo "Schritt 7: /etc/hosts anpassen (das muss man pro Node machen!)"
 echo "Step 7: make all other nodes known via /etc/hosts"
 echo "--------------------------------------------------------------"
 sudo tee -a /etc/hosts <<-EOF
+192.168.2.9  cl2nfs
 192.168.2.11 cl2node1
 192.168.2.12 cl2node2
 EOF
@@ -148,10 +149,10 @@ echo "------------------"
 echo "Schritt 8: network interface manuell konfigurieren"
 echo "Step 8: manually configure the network adapter"
 echo "=================================================="
-sudo nmcli con mod "System eth1" ipv4.address "192.168.2.10/24"
-sudo nmcli con mod "System eth1" ipv4.method "manual"
-sudo nmcli con down "System eth1"
-sudo nmcli con up "System eth1"
+sudo nmcli con mod "System enp0s8" ipv4.address "192.168.2.10/24"
+sudo nmcli con mod "System enp0s8" ipv4.method "manual"
+sudo nmcli con down "System enp0s8"
+sudo nmcli con up "System enp0s8"
 echo "Schritt 8 erledigt"
 echo "Step 8 done"
 echo "------------------"
@@ -210,7 +211,7 @@ echo "yq herunterladen und installieren:"
 # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
 # wget https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml
 # yq r --doc 4 kube-flannel.yml spec.template.spec.containers[0].args
-kubectl apply -f /vagrant/deployments/kube-flannel.yml
+kubectl apply -f /vagrant/deployments/system/kube-flannel.yml
 echo "Schritt 13 erledigt"
 echo "Step 13 done"
 echo "-------------------"
@@ -218,3 +219,4 @@ EOF
 
 SHELL
 end
+

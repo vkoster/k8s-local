@@ -138,6 +138,7 @@ echo "Schritt 7: /etc/hosts anpassen (das muss man pro Node machen!)"
 echo "Step 7: make all other nodes known via /etc/hosts"
 echo "--------------------------------------------------------------"
 sudo tee -a /etc/hosts <<-EOF
+192.168.2.9  cl2nfs
 192.168.2.10 cl2master
 192.168.2.11 cl2node1
 EOF
@@ -148,10 +149,10 @@ echo "------------------"
 echo "Schritt 8: network interface manuell konfigurieren"
 echo "Step 8: manually configure the network adapter"
 echo "=================================================="
-sudo nmcli con mod "System eth1" ipv4.address "192.168.2.12/24"
-sudo nmcli con mod "System eth1" ipv4.method "manual"
-sudo nmcli con down "System eth1"
-sudo nmcli con up "System eth1"
+sudo nmcli con mod "System enp0s8" ipv4.address "192.168.2.12/24"
+sudo nmcli con mod "System enp0s8" ipv4.method "manual"
+sudo nmcli con down "System enp0s8"
+sudo nmcli con up "System enp0s8"
 echo "Schritt 8 erledigt"
 echo "Step 8 done"
 echo "------------------"
@@ -180,6 +181,8 @@ echo "==================================================="
 sudo tee -a /etc/sysconfig/kubelet <<-EOF
 KUBELET_EXTRA_ARGS=--node-ip=192.168.2.12
 EOF
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
 echo "Step 11 done"
 echo "------------------"
 

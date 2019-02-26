@@ -1,4 +1,6 @@
-File: README.md
+# Set Up a Three Node Local Kubernetes Cluster with Vagrant
+File:   README.md
+Author: Volker Koster
 
 # Deutsch
 ## Projektziele

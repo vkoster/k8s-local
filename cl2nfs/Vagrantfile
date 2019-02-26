@@ -11,8 +11,6 @@ Vagrant.configure("2") do |config|
   # ...define momory and number of CPUs
   config.vm.provider "virtualbox" do |v|
       v.name = "cl2nfs"
-      v.memory = 2048
-      v.cpus = 2
   end
 
   # Hostname definieren
@@ -43,6 +41,7 @@ echo "Schritt 7: /etc/hosts anpassen (das muss man pro Node machen!)"
 echo "Step 7: make all other nodes known via /etc/hosts"
 echo "--------------------------------------------------------------"
 sudo tee -a /etc/hosts <<-EOF
+192.168.2.9  cl2nfs
 192.168.2.10 cl2master
 192.168.2.11 cl2node1
 192.168.2.12 cl2node2
@@ -62,20 +61,35 @@ echo "Schritt 8 erledigt"
 echo "Step 8 done"
 echo "------------------"
 
-yum install nfs-utils nfs-utils-lib
-systemctl enable rpcbind
-systemctl enable nfs-server
-systemctl enable nfs-lock
-systemctl enable nfs-idmap
+sudo yum install nfs-utils nfs-utils-lib -y
+sudo systemctl enable rpcbind
+sudo systemctl enable nfs-server
+sudo systemctl enable nfs-lock
+sudo systemctl enable nfs-idmap
 
-systemctl start rpcbind
-systemctl start nfs-server
-systemctl start nfs-lock
-systemctl start nfs-idmap
+sudo systemctl start rpcbind
+sudo systemctl start nfs-server
+sudo systemctl start nfs-lock
+sudo systemctl start nfs-idmap
 
-# create k8s_share and parents
-mkdir -p /vagrant/storage/k8s_share
-chmod 777 /vagrant/storage/k8s_share
+# create mongodb and parents
+echo " -o-: Creating Mount Point"
+sudo mkdir -p /var/storage/mongodb
+sudo chmod 777 /var/storage/mongodb
+# create v1...vn and parents
+sudo mkdir -p /var/storage/v1
+sudo chmod 777 /var/storage/v1
+sudo mkdir -p /var/storage/v2
+sudo chmod 777 /var/storage/v2
 
+echo " -o-: "
+sudo tee /etc/exports <<-EOF
+/var/storage/mongodb     192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
+/var/storage/v1          192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
+/var/storage/v2          192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
+
+EOF
+echo " -o-: restart nfs Server"
+sudo systemctl restart nfs-server
 SHELL
 end
